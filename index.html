@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Busca CEP</title>
+  <style>
+    /* Variáveis de tema */
+    :root {
+      --bg-body: #f0f8ff;
+      --bg-container: white;
+      --text-color: #2c3e50;
+      --border-color: #eaeaea;
+      --button-bg: linear-gradient(to bottom, #b3d9ff, #80bfff);
+      --button-hover: linear-gradient(to bottom, #c2e0ff, #90ccff);
+      --button-text: #003366;
+      --button-arrow: #004080;
+      --form-bg: #f8fbff;
+      --form-border: #d0e6ff;
+      --input-border: #a0c4e8;
+      --input-bg: white;
+      --result-success-bg: #e6f4ea;
+      --result-success-border: #4CAF50;
+      --result-error-bg: #ffeaea;
+      --result-error-border: #f44336;
+      --shadow: 0 4px 12px rgba(0,0,0,0.1);
+      --button-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    }
+
+    [data-theme="dark"] {
+      --bg-body: #121212;
+      --bg-container: #1e1e1e;
+      --text-color: #e0e0e0;
+      --border-color: #333;
+      --button-bg: linear-gradient(to bottom, #2a3f5f, #1e2e4a);
+      --button-hover: linear-gradient(to bottom, #3a4f6f, #2a3e5a);
+      --button-text: #d0e0ff;
+      --button-arrow: #a0c0ff;
+      --form-bg: #252525;
+      --form-border: #3a4a66;
+      --input-border: #445577;
+      --input-bg: #2d2d2d;
+      --result-success-bg: #1b2a23;
+      --result-success-border: #4CAF50;
+      --result-error-bg: #2a1f1f;
+      --result-error-border: #f44336;
+      --shadow: 0 4px 12px rgba(0,0,0,0.3);
+      --button-shadow: 0 4px 6px rgba(0,0,0,0.4);
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-color);
+      padding: 20px;
+      margin: 0;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: var(--bg-container);
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      transition: background 0.3s, box-shadow 0.3s;
+    }
+
+    h1 {
+      text-align: center;
+      color: var(--text-color);
+      margin-bottom: 25px;
+    }
+
+    /* Botão de alternância de tema */
+    .theme-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--button-bg);
+      color: var(--button-text);
+      border: none;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      font-size: 18px;
+      cursor: pointer;
+      box-shadow: var(--button-shadow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    .search-section {
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 15px;
+    }
+
+    .search-button {
+      width: 100%;
+      padding: 14px 16px;
+      background: var(--button-bg);
+      color: var(--button-text);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      text-align: left;
+      box-shadow: var(--button-shadow), inset 0 1px 0 rgba(255,255,255,0.2);
+      position: relative;
+      transition: all 0.2s ease;
+    }
+
+    .search-button:hover {
+      background: var(--button-hover);
+      box-shadow: 0 5px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.3);
+    }
+
+    .search-button:active {
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2), inset 0 1px 3px rgba(0,0,0,0.3);
+      transform: translateY(1px);
+    }
+
+    .search-button::after {
+      content: "▶";
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 14px;
+      color: var(--button-arrow);
+      transition: all 0.3s ease;
+    }
+
+    .search-button.expanded::after {
+      content: "▼";
+    }
+
+    .search-form {
+      display: none;
+      padding: 16px;
+      background-color: var(--form-bg);
+      border-radius: 8px;
+      margin-top: 12px;
+      border: 1px solid var(--form-border);
+    }
+
+    .search-form.active {
+      display: block;
+    }
+
+    .search-form label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+      color: var(--text-color);
+    }
+
+    .search-form input,
+    .search-form select {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 14px;
+      border: 1px solid var(--input-border);
+      border-radius: 6px;
+      box-sizing: border-box;
+      background-color: var(--input-bg);
+      color: var(--text-color);
+    }
+
+    .search-form button {
+      background: linear-gradient(to bottom, #4CAF50, #388E3C);
+      color: white;
+      padding: 10px 18px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      box-shadow: 0 3px 5px rgba(0,0,0,0.2);
+    }
+
+    .search-form button:hover {
+      background: linear-gradient(to bottom, #66BB6A, #43A047);
+    }
+
+    .result {
+      margin-top: 16px;
+      padding: 12px;
+      background-color: var(--result-success-bg);
+      border-left: 4px solid var(--result-success-border);
+      border-radius: 6px;
+      display: none;
+    }
+
+    .result.error {
+      background-color: var(--result-error-bg);
+      border-left-color: var(--result-error-border);
+    }
+
+    .result.show {
+      display: block;
+    }
+
+    .result h4 {
+      margin-top: 0;
+      color: #4CAF50;
+    }
+
+    .result p {
+      margin: 5px 0;
+      color: var(--text-color);
+    }
+  </style>
+</head>
+<body>
+  <!-- Botão de alternância de tema -->
+  <button class="theme-toggle" id="themeToggle" aria-label="Alternar tema">☀️</button>
+
+  <div class="container">
+    <h1>Busca CEP</h1>
+
+    <!-- 1. Busca por Localidade/Logradouro -->
+    <div class="search-section">
+      <button class="search-button" id="btn1" onclick="toggleForm('form1', 'btn1')">📍 Busca por Localidade/Logradouro</button>
+      <div id="form1" class="search-form">
+        <label for="uf1">UF:</label>
+        <select id="uf1">
+          <option value="">Selecione</option>
+          <option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option><option value="AM">AM</option>
+          <option value="BA">BA</option><option value="CE">CE</option><option value="DF">DF</option><option value="ES">ES</option>
+          <option value="GO">GO</option><option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option>
+          <option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option><option value="PR">PR</option>
+          <option value="PE">PE</option><option value="PI">PI</option><option value="RJ">RJ</option><option value="RN">RN</option>
+          <option value="RS">RS</option><option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option>
+          <option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option>
+        </select>
+        <label for="localidade1">Cidade:</label>
+        <input type="text" id="localidade1" placeholder="Ex: São Paulo">
+        <label for="logradouro1">Logradouro:</label>
+        <input type="text" id="logradouro1" placeholder="Ex: Rua Augusta" 
+               onkeydown="if(event.key === 'Enter' && this.value.trim()) buscarPorLocalidadeLogradouro()">
+        <button onclick="buscarPorLocalidadeLogradouro()">Buscar</button>
+        <div id="resultado1" class="result"></div>
+      </div>
+    </div>
+
+    <!-- 2. Busca por CEP -->
+    <div class="search-section">
+      <button class="search-button" id="btn2" onclick="toggleForm('form2', 'btn2')">🔢 Busca por CEP</button>
+      <div id="form2" class="search-form">
+        <label for="cep2">CEP (somente números ou com hífen):</label>
+        <input type="text" id="cep2" placeholder="Ex: 01001-000 ou 01001000"
+               onkeydown="if(event.key === 'Enter' && this.value.trim()) buscarPorCep()">
+        <button onclick="buscarPorCep()">Buscar</button>
+        <div id="resultado2" class="result"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Alternância de tema
+    const themeToggle = document.getElementById('themeToggle');
+    const body = document.body;
+
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    if (savedTheme === 'dark') {
+      body.setAttribute('data-theme', 'dark');
+      themeToggle.textContent = '🌙';
+    } else {
+      body.removeAttribute('data-theme');
+      themeToggle.textContent = '☀️';
+    }
+
+    themeToggle.addEventListener('click', () => {
+      const isDark = body.getAttribute('data-theme') === 'dark';
+      if (isDark) {
+        body.removeAttribute('data-theme');
+        localStorage.setItem('theme', 'light');
+        themeToggle.textContent = '☀️';
+      } else {
+        body.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+        themeToggle.textContent = '🌙';
+      }
+    });
+
+    function toggleForm(formId, buttonId) {
+      const form = document.getElementById(formId);
+      const button = document.getElementById(buttonId);
+      form.classList.toggle('active');
+      button.classList.toggle('expanded');
+    }
+
+    function mostrarResultado(elementId, conteudo, sucesso = true) {
+      const el = document.getElementById(elementId);
+      el.innerHTML = conteudo;
+      el.className = 'result ' + (sucesso ? 'show' : 'error show');
+    }
+
+    async function buscarPorLocalidadeLogradouro() {
+      const uf = document.getElementById('uf1').value;
+      const localidade = document.getElementById('localidade1').value.trim();
+      const logradouro = document.getElementById('logradouro1').value.trim();
+      const resultadoId = 'resultado1';
+
+      if (!uf || !localidade || !logradouro) {
+        mostrarResultado(resultadoId, '<p>Preencha UF, cidade e logradouro.</p>', false);
+        return;
+      }
+
+      try {
+        const url = `https://viacep.com.br/ws/${uf}/${localidade}/${logradouro}/json/`;
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (Array.isArray(data) && data.length > 0) {
+          let html = '<h4>Resultados encontrados:</h4>';
+          data.forEach(item => {
+            html += `<p><strong>CEP:</strong> ${item.cep} | ${item.logradouro}, ${item.bairro} - ${item.localidade}/${item.uf}</p>`;
+          });
+          mostrarResultado(resultadoId, html);
+        } else {
+          mostrarResultado(resultadoId, '<p>Nenhum resultado encontrado.</p>', false);
+        }
+      } catch (error) {
+        mostrarResultado(resultadoId, `<p>Erro na busca: ${error.message}</p>`, false);
+      }
+    }
+
+    async function buscarPorCep() {
+      const cepInput = document.getElementById('cep2').value.trim();
+      const cepLimpo = cepInput.replace(/\D/g, '');
+      const resultadoId = 'resultado2';
+
+      if (cepLimpo.length !== 8) {
+        mostrarResultado(resultadoId, '<p>CEP inválido. Digite 8 dígitos.</p>', false);
+        return;
+      }
+
+      try {
+        const response = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
+        const data = await response.json();
+
+        if (data.erro) {
+          mostrarResultado(resultadoId, '<p>CEP não encontrado.</p>', false);
+        } else {
+          const html = `
+            <h4>Endereço encontrado:</h4>
+            <p><strong>CEP:</strong> ${data.cep}</p>
+            <p><strong>Logradouro:</strong> ${data.logradouro || '–'}</p>
+            <p><strong>Complemento:</strong> ${data.complemento || '–'}</p>
+            <p><strong>Bairro:</strong> ${data.bairro || '–'}</p>
+            <p><strong>Cidade:</strong> ${data.localidade}</p>
+            <p><strong>UF:</strong> ${data.uf}</p>
+          `;
+          mostrarResultado(resultadoId, html);
+        }
+      } catch (error) {
+        mostrarResultado(resultadoId, `<p>Erro na busca: ${error.message}</p>`, false);
+      }
+    }
+  </script>
+</body>
+</html>
